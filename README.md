@@ -1,12 +1,12 @@
-# Presentation
+# `presentation.nvim`
 simple markdown renderer
 
 ```lua
 {
     "seolman/presentation.nvim",
-    config = function()
-        local p = require("presentation")
-        p.setup()
-    end,
 }
 ```
+
+`n`: next slide
+`p`: prev slide
+`q`: quit slide
