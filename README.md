@@ -7,6 +7,9 @@ simple markdown renderer
 }
 ```
 
-`n`: next slide
-`p`: prev slide
-`q`: quit slide
+- `n`: next slide
+- `p`: prev slide
+- `q`: quit slide
+
+# test
+do something
