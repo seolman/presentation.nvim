@@ -1,12 +1,46 @@
 local M = {}
 
 local function create_floating_window(config)
-
   local buf = vim.api.nvim_create_buf(false, true)
-
   local win = vim.api.nvim_open_win(buf, true, config)
 
   return { buf = buf, win = win }
+end
+
+local create_window_config = function()
+  local width = vim.o.columns
+  local height = vim.o.lines
+
+  return {
+    background = {
+      relative = "editor",
+      width = width,
+      height = height,
+      style = "minimal",
+      col = 0,
+      row = 0,
+      zindex = 1,
+    },
+    header = {
+      relative = "editor",
+      width = width,
+      height = 1,
+      style = "minimal",
+      border = "single",
+      col = 0,
+      row = 0,
+      zindex = 2,
+    },
+    body = {
+      relative = "editor",
+      width = width - 8,
+      height = height - 5,
+      style = "minimal",
+      border = { " ", " ", " ", " ", " ", " ", " ", " " },
+      col = 8,
+      row = 4,
+    },
+  }
 end
 
 M.setup = function()
@@ -61,40 +95,7 @@ M.start_presentation = function(opts)
   local lines = vim.api.nvim_buf_get_lines(opts.bufnr, 0, -1, false)
   local parsed = parse_slides(lines)
 
-  ---@type vim.api.keyset.win_config[]
-  local width = vim.o.columns
-  local height = vim.o.lines
-
-  local windows = {
-    background = {
-      relative = "editor",
-      width = width,
-      height = height,
-      style = "minimal",
-      col = 0,
-      row = 0,
-      zindex = 1,
-    },
-    header = {
-      relative = "editor",
-      width = width,
-      height = 1,
-      style = "minimal",
-      border = "single",
-      col = 0,
-      row = 0,
-      zindex = 2,
-    },
-    body = {
-      relative = "editor",
-      width = width - 8,
-      height = height - 5,
-      style = "minimal",
-      border = { " ", " ", " ", " ", " ", " ", " ", " " },
-      col = 8,
-      row = 4,
-    },
-  }
+  local windows = create_window_config()
 
   local background_float = create_floating_window(windows.background)
   local header_float = create_floating_window(windows.header)
@@ -104,6 +105,7 @@ M.start_presentation = function(opts)
   vim.bo[body_float.buf].filetype = "markdown"
 
   local set_slide_content = function(idx)
+    local width = vim.o.columns
     local slide = parsed.slides[idx]
 
     local padding = string.rep(" ", (width - #slide.title) / 2)
@@ -154,16 +156,21 @@ M.start_presentation = function(opts)
     end
   })
 
+  vim.api.nvim_create_autocmd("VimResized", {
+    group = vim.api.nvim_create_augroup("PresentResized", {}),
+    callback = function()
+      if not vim.api.nvim_win_is_valid(body_float.win) or body_float.win == nil then
+        return
+      end
+
+      local updated = create_window_config()
+      vim.api.nvim_win_set_config(background_float.win, updated.background)
+      vim.api.nvim_win_set_config(header_float.win, updated.header)
+      vim.api.nvim_win_set_config(body_float.win, updated.body)
+      set_slide_content(current_slide)
+    end,
+  })
   set_slide_content(current_slide)
 end
-
--- M.start_presentation({ bufnr = 30 })
-
--- vim.print(parse_slides({
---   "# Hello",
---   "this is markdown",
---   "# World",
---   "this is nice",
--- }))
 
 return M
